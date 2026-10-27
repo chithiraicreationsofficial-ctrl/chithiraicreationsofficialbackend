@@ -1078,191 +1078,226 @@ const sendDiwaliVerificationToken = async (participant, token) => {
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta name="color-scheme" content="light dark">
+                <meta name="supported-color-schemes" content="light dark">
                 <title>Contest Verification Token</title>
                 <style>
+                    :root {
+                        color-scheme: light dark;
+                        supported-color-schemes: light dark;
+                    }
                     body {
-                        font-family: 'Poppins', Arial, sans-serif;
-                        background-color: #12041c;
+                        font-family: Arial, Helvetica, sans-serif;
+                        background-color: #0d0214;
                         color: #ffffff;
                         margin: 0;
                         padding: 20px;
+                        -webkit-font-smoothing: antialiased;
                     }
                     .email-wrapper {
                         max-width: 600px;
                         margin: 0 auto;
-                        background: linear-gradient(145deg, #240a33 0%, #150520 100%);
+                        background-color: #1c062a;
                         border: 2px solid #ffd700;
-                        border-radius: 20px;
+                        border-radius: 18px;
                         overflow: hidden;
                         box-shadow: 0 10px 40px rgba(0,0,0,0.8);
                     }
                     .email-header {
                         background: linear-gradient(135deg, #ff8c00 0%, #e53935 100%);
+                        background-color: #ff8c00;
                         padding: 30px 20px;
                         text-align: center;
-                        color: #ffffff;
-                    }
-                    .email-header h1 {
-                        margin: 0;
-                        font-size: 24px;
-                        letter-spacing: 1px;
-                        text-transform: uppercase;
-                    }
-                    .email-header p {
-                        margin: 8px 0 0;
-                        font-size: 14px;
-                        opacity: 0.95;
                     }
                     .email-body {
-                        padding: 30px 25px;
+                        padding: 28px 22px;
+                        background-color: #1c062a;
                     }
                     .token-card {
                         background: linear-gradient(135deg, #ffd700 0%, #ff9100 100%);
-                        color: #12041c;
-                        padding: 20px;
+                        background-color: #ff9100;
+                        color: #12041c !important;
+                        padding: 22px 18px;
                         border-radius: 14px;
                         text-align: center;
-                        margin: 25px 0;
-                        box-shadow: 0 8px 25px rgba(255, 145, 0, 0.4);
-                    }
-                    .token-label {
-                        font-size: 12px;
-                        font-weight: 800;
-                        letter-spacing: 2px;
-                        text-transform: uppercase;
-                        margin-bottom: 5px;
-                    }
-                    .token-value {
-                        font-size: 32px;
-                        font-weight: 900;
-                        letter-spacing: 3px;
+                        margin: 24px 0;
+                        box-shadow: 0 8px 25px rgba(255, 145, 0, 0.45);
                     }
                     .details-table {
                         width: 100%;
-                        border-collapse: collapse;
-                        margin: 20px 0;
-                        background: rgba(255, 255, 255, 0.05);
-                        border-radius: 10px;
+                        border-collapse: separate;
+                        border-spacing: 0;
+                        margin: 22px 0;
+                        background-color: #2b0e3f;
+                        border: 1px solid #ffd700;
+                        border-radius: 12px;
                         overflow: hidden;
                     }
-                    .details-table td {
-                        padding: 12px 16px;
-                        border-bottom: 1px solid rgba(255, 215, 0, 0.15);
-                        font-size: 14px;
-                    }
-                    .details-table td.label {
-                        color: #ffd700;
-                        font-weight: 600;
-                        width: 40%;
-                    }
-                    .details-table td.value {
-                        color: #ffffff;
-                    }
                     .steps-box {
-                        background: rgba(255, 215, 0, 0.08);
-                        border: 1px dashed #ffd700;
+                        background-color: #2b1300;
+                        border: 2px dashed #ff9800;
                         border-radius: 12px;
-                        padding: 18px 20px;
+                        padding: 20px;
                         margin: 25px 0;
                     }
-                    .steps-box h3 {
-                        color: #ffd700;
-                        margin-top: 0;
-                        font-size: 16px;
+                    @media (prefers-color-scheme: dark) {
+                        body { background-color: #0d0214 !important; }
+                        .email-wrapper { background-color: #1c062a !important; }
+                        .dark-text-white { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; }
+                        .dark-text-gold { color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important; }
+                        .dark-table-bg { background-color: #2b0e3f !important; }
                     }
-                    .steps-box ol {
-                        margin: 0;
-                        padding-left: 20px;
-                        color: #f0f0f0;
-                        font-size: 13px;
-                        line-height: 1.8;
-                    }
-                    .email-footer {
-                        text-align: center;
-                        padding: 20px;
-                        font-size: 12px;
-                        color: rgba(255, 255, 255, 0.6);
-                        border-top: 1px solid rgba(255, 215, 0, 0.2);
-                    }
+                    [data-ogsc] .dark-text-white { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; }
+                    [data-ogsc] .dark-text-gold { color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important; }
                 </style>
             </head>
-            <body>
-                <div class="email-wrapper">
-                    <div class="email-header">
-                        <h1>🪔 Digital Diwali Palagaram Villa</h1>
-                        <p>Contest Entry Official Verification Token</p>
+            <body style="margin: 0; padding: 20px; background-color: #0d0214; font-family: Arial, Helvetica, sans-serif;" bgcolor="#0d0214">
+                <div class="email-wrapper" style="max-width: 600px; margin: 0 auto; background-color: #1c062a; border: 2px solid #ffd700; border-radius: 18px; overflow: hidden;" bgcolor="#1c062a">
+                    <!-- Top Header -->
+                    <div class="email-header" style="background: linear-gradient(135deg, #ff8c00 0%, #e53935 100%); background-color: #ff8c00; padding: 28px 20px; text-align: center;" bgcolor="#ff8c00">
+                        <h1 style="margin: 0; font-size: 24px; letter-spacing: 1px; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; text-transform: uppercase; font-weight: 800;">
+                            <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">🪔 Digital Diwali Palagaram Villa</span>
+                        </h1>
+                        <p style="margin: 8px 0 0; font-size: 14px; color: #fff8e7 !important; -webkit-text-fill-color: #fff8e7 !important; font-weight: 600;">
+                            <span style="color: #fff8e7 !important; -webkit-text-fill-color: #fff8e7 !important;">Contest Entry Official Verification Token</span>
+                        </p>
                     </div>
-                    <div class="email-body">
-                        <p style="font-size: 16px; color: #ffffff;">Dear <strong>${participant.name}</strong>,</p>
-                        <p style="color: rgba(255,255,255,0.85); line-height: 1.6;">
-                            Congratulations! Your payment and contest registration have been <strong>verified and approved</strong> by our team.
+
+                    <!-- Email Main Body -->
+                    <div class="email-body" style="padding: 28px 22px; background-color: #1c062a;" bgcolor="#1c062a">
+                        <p style="margin: 0 0 10px 0; font-size: 16px; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; font-weight: 600;">
+                            <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">Dear <strong style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">${participant.name}</strong>,</span>
+                        </p>
+                        <p style="margin: 0 0 22px 0; font-size: 14px; line-height: 1.6; color: #f0e6ff !important; -webkit-text-fill-color: #f0e6ff !important;">
+                            <span style="color: #f0e6ff !important; -webkit-text-fill-color: #f0e6ff !important;">Congratulations! Your payment and contest registration have been <strong style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">verified and approved</strong> by our team.</span>
                         </p>
                         
-                        <div class="token-card">
-                            <div class="token-label">Official Contest Token</div>
-                            <div class="token-value">${token}</div>
+                        <!-- Big Official Token Card -->
+                        <div class="token-card" style="background: linear-gradient(135deg, #ffd700 0%, #ff9100 100%); background-color: #ff9100; color: #12041c !important; -webkit-text-fill-color: #12041c !important; padding: 22px 18px; border-radius: 14px; text-align: center; margin: 24px 0; border: 1px solid #ffd700;" bgcolor="#ff9100">
+                            <div style="font-size: 13px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; color: #200830 !important; -webkit-text-fill-color: #200830 !important;">
+                                <span style="color: #200830 !important; -webkit-text-fill-color: #200830 !important;">Official Contest Token</span>
+                            </div>
+                            <div style="font-size: 38px; font-weight: 900; letter-spacing: 4px; color: #12041c !important; -webkit-text-fill-color: #12041c !important; font-family: 'Courier New', Courier, monospace;">
+                                <span style="color: #12041c !important; -webkit-text-fill-color: #12041c !important;">${token}</span>
+                            </div>
                         </div>
 
-                        <table class="details-table">
+                        <!-- Full User Details Table (100% Dark-Mode Proof Inline Colors) -->
+                        <table class="details-table dark-table-bg" style="width: 100%; border-collapse: separate; border-spacing: 0; margin: 22px 0; background-color: #2b0e3f; border: 1px solid #ffd700; border-radius: 12px; overflow: hidden;" bgcolor="#2b0e3f">
                             <tr>
-                                <td class="label">Participant Name</td>
-                                <td class="value"><strong>${participant.name}</strong></td>
+                                <td style="padding: 12px 16px; border-bottom: 1px solid #4a1f6a; font-size: 13px; color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important; font-weight: 700; width: 40%; vertical-align: top; background-color: #2b0e3f;" bgcolor="#2b0e3f">
+                                    <span style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">Participant Name</span>
+                                </td>
+                                <td style="padding: 12px 16px; border-bottom: 1px solid #4a1f6a; font-size: 14px; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; font-weight: 700; vertical-align: top; background-color: #2b0e3f;" bgcolor="#2b0e3f">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">${participant.name}</span>
+                                </td>
                             </tr>
                             <tr>
-                                <td class="label">Gender &amp; Age</td>
-                                <td class="value">${participant.gender || "—"} • ${participant.age} Years</td>
+                                <td style="padding: 12px 16px; border-bottom: 1px solid #4a1f6a; font-size: 13px; color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important; font-weight: 700; vertical-align: top; background-color: #2b0e3f;" bgcolor="#2b0e3f">
+                                    <span style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">Gender &amp; Age</span>
+                                </td>
+                                <td style="padding: 12px 16px; border-bottom: 1px solid #4a1f6a; font-size: 14px; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; font-weight: 600; vertical-align: top; background-color: #2b0e3f;" bgcolor="#2b0e3f">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">${participant.gender || "—"} • ${participant.age} Years</span>
+                                </td>
                             </tr>
                             <tr>
-                                <td class="label">Mobile Number</td>
-                                <td class="value">${participant.phone}</td>
+                                <td style="padding: 12px 16px; border-bottom: 1px solid #4a1f6a; font-size: 13px; color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important; font-weight: 700; vertical-align: top; background-color: #2b0e3f;" bgcolor="#2b0e3f">
+                                    <span style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">Mobile Number</span>
+                                </td>
+                                <td style="padding: 12px 16px; border-bottom: 1px solid #4a1f6a; font-size: 14px; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; font-weight: 600; vertical-align: top; background-color: #2b0e3f;" bgcolor="#2b0e3f">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">${participant.phone}</span>
+                                </td>
                             </tr>
                             <tr>
-                                <td class="label">Email Address</td>
-                                <td class="value">${participant.email}</td>
+                                <td style="padding: 12px 16px; border-bottom: 1px solid #4a1f6a; font-size: 13px; color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important; font-weight: 700; vertical-align: top; background-color: #2b0e3f;" bgcolor="#2b0e3f">
+                                    <span style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">Email Address</span>
+                                </td>
+                                <td style="padding: 12px 16px; border-bottom: 1px solid #4a1f6a; font-size: 14px; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; font-weight: 600; vertical-align: top; background-color: #2b0e3f;" bgcolor="#2b0e3f">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">${participant.email}</span>
+                                </td>
                             </tr>
                             <tr>
-                                <td class="label">District &amp; State</td>
-                                <td class="value">${participant.district}, ${participant.state || "Tamil Nadu"}</td>
+                                <td style="padding: 12px 16px; border-bottom: 1px solid #4a1f6a; font-size: 13px; color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important; font-weight: 700; vertical-align: top; background-color: #2b0e3f;" bgcolor="#2b0e3f">
+                                    <span style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">District &amp; State</span>
+                                </td>
+                                <td style="padding: 12px 16px; border-bottom: 1px solid #4a1f6a; font-size: 14px; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; font-weight: 600; vertical-align: top; background-color: #2b0e3f;" bgcolor="#2b0e3f">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">${participant.district}, ${participant.state || "Tamil Nadu"}</span>
+                                </td>
                             </tr>
                             <tr>
-                                <td class="label">Instagram Profile</td>
-                                <td class="value">${participant.instagram_profile || participant.instagramProfile || "—"}</td>
+                                <td style="padding: 12px 16px; border-bottom: 1px solid #4a1f6a; font-size: 13px; color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important; font-weight: 700; vertical-align: top; background-color: #2b0e3f;" bgcolor="#2b0e3f">
+                                    <span style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">Instagram Profile</span>
+                                </td>
+                                <td style="padding: 12px 16px; border-bottom: 1px solid #4a1f6a; font-size: 14px; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; font-weight: 600; vertical-align: top; background-color: #2b0e3f;" bgcolor="#2b0e3f">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">${participant.instagram_profile || participant.instagramProfile || "—"}</span>
+                                </td>
                             </tr>
                             <tr>
-                                <td class="label">Sweet / Palagaram</td>
-                                <td class="value"><strong>${participant.sweet_name || participant.sweetName}</strong></td>
+                                <td style="padding: 12px 16px; border-bottom: 1px solid #4a1f6a; font-size: 13px; color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important; font-weight: 700; vertical-align: top; background-color: #2b0e3f;" bgcolor="#2b0e3f">
+                                    <span style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">Sweet / Palagaram</span>
+                                </td>
+                                <td style="padding: 12px 16px; border-bottom: 1px solid #4a1f6a; font-size: 14px; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; font-weight: 700; vertical-align: top; background-color: #2b0e3f;" bgcolor="#2b0e3f">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">${participant.sweet_name || participant.sweetName}</span>
+                                </td>
                             </tr>
                             <tr>
-                                <td class="label">Contest Category</td>
-                                <td class="value"><strong style="color: #ffd700;">${participant.category}</strong></td>
+                                <td style="padding: 12px 16px; border-bottom: 1px solid #4a1f6a; font-size: 13px; color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important; font-weight: 700; vertical-align: top; background-color: #2b0e3f;" bgcolor="#2b0e3f">
+                                    <span style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">Contest Category</span>
+                                </td>
+                                <td style="padding: 12px 16px; border-bottom: 1px solid #4a1f6a; font-size: 14px; color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important; font-weight: 800; vertical-align: top; background-color: #2b0e3f;" bgcolor="#2b0e3f">
+                                    <span style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">${participant.category}</span>
+                                </td>
                             </tr>
                             ${participant.ingredients ? `
                             <tr>
-                                <td class="label">Ingredients / Recipe</td>
-                                <td class="value" style="font-size: 13px; line-height: 1.5;">${participant.ingredients}</td>
+                                <td style="padding: 12px 16px; font-size: 13px; color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important; font-weight: 700; vertical-align: top; background-color: #2b0e3f;" bgcolor="#2b0e3f">
+                                    <span style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">Ingredients / Recipe</span>
+                                </td>
+                                <td style="padding: 12px 16px; font-size: 13px; line-height: 1.5; color: #f0e6ff !important; -webkit-text-fill-color: #f0e6ff !important; vertical-align: top; background-color: #2b0e3f;" bgcolor="#2b0e3f">
+                                    <span style="color: #f0e6ff !important; -webkit-text-fill-color: #f0e6ff !important;">${participant.ingredients}</span>
+                                </td>
                             </tr>
                             ` : ""}
                         </table>
 
-                        <div class="steps-box">
-                            <h3>Next Steps to Participate:</h3>
-                            <ol>
-                                <li>Make your unique Diwali sweet or snack yourself.</li>
-                                <li>Record a <strong>90-sec Reel (you in it)</strong> &amp; click <strong>5 Photos</strong> on mobile in order: <em>Ingredients → Making → SVS Product in use → Dish → Final dish with you</em>.</li>
-                                <li><strong>MAIN POINT: SVS Product</strong> (Choose any 1): Option 1: Use SVS product in photo/video, OR Option 2: Mention SVS slogan in description (Photo) or speak in video (Reel).</li>
-                                <li><strong>Mention your Token (${token})</strong> in your Instagram caption.</li>
-                                <li><strong>COLLAB IS A MUST:</strong> Collab with BOTH accounts: <strong>@chithirai.creations</strong> and <strong>@svsfoods</strong>.</li>
-                                <li>Upload between <strong>28 Oct and 09 Nov 2026</strong>.</li>
+                        <!-- Next Steps Box -->
+                        <div class="steps-box" style="background-color: #2b1300; border: 2px dashed #ff9800; border-radius: 12px; padding: 20px; margin: 25px 0;" bgcolor="#2b1300">
+                            <h3 style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important; margin: 0 0 12px 0; font-size: 16px; font-weight: 800;">
+                                <span style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">Next Steps to Participate:</span>
+                            </h3>
+                            <ol style="margin: 0; padding-left: 20px; color: #ffffff !important;">
+                                <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">Make your unique Diwali sweet or snack yourself.</span>
+                                </li>
+                                <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">Record a <strong>90-sec Reel (you in it)</strong> &amp; click <strong>5 Photos</strong> on mobile in order: <em>Ingredients → Making → SVS Product in use → Dish → Final dish with you</em>.</span>
+                                </li>
+                                <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;"><strong>MAIN POINT: SVS Product</strong> (Choose any 1): Option 1: Use SVS product in photo/video, OR Option 2: Mention SVS slogan in description (Photo) or speak in video (Reel).</span>
+                                </li>
+                                <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;"><strong>Mention your Official Token (${token})</strong> in your Instagram caption.</span>
+                                </li>
+                                <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;"><strong>COLLAB IS A MUST:</strong> Collab with BOTH accounts: <strong>@chithirai.creations</strong> and <strong>@svsfoods</strong>.</span>
+                                </li>
+                                <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">Upload between <strong>28 Oct and 09 Nov 2026</strong>.</span>
+                                </li>
                             </ol>
                         </div>
 
-                        <p style="text-align: center; color: #ffd700; font-weight: 700; margin-top: 25px;">
-                            Prizes Worth ₹1,00,000 + Top 50 Win ₹300 SVS Hampers!
+                        <p style="text-align: center; color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important; font-weight: 800; margin-top: 25px; font-size: 14px;">
+                            <span style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">🏆 Prizes Worth ₹1,00,000 + Top 50 Win ₹300 SVS Hampers!</span>
                         </p>
                     </div>
-                    <div class="email-footer">
-                        © 2026 Chithirai Creations. Title Sponsor: SVS Foods.<br/>
-                        For queries: chithiraicreations@gmail.com | WhatsApp: +91 70102 40042
+
+                    <!-- Email Footer -->
+                    <div class="email-footer" style="text-align: center; padding: 18px; font-size: 12px; color: #d8b4fe !important; -webkit-text-fill-color: #d8b4fe !important; border-top: 1px solid rgba(255, 215, 0, 0.2); background-color: #14031f;" bgcolor="#14031f">
+                        <span style="color: #d8b4fe !important; -webkit-text-fill-color: #d8b4fe !important;">
+                            © 2026 Chithirai Creations. Title Sponsor: SVS Foods.<br/>
+                            For queries: chithiraicreations@gmail.com | WhatsApp: +91 70102 40042
+                        </span>
                     </div>
                 </div>
             </body>
