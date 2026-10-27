@@ -93,8 +93,8 @@ app.use((error, req, res, next) => {
 // Export app for Vercel Serverless Functions
 module.exports = app;
 
-// In local development, start HTTP server on port
-if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+// In local development, start HTTP server on port when run directly
+if (require.main === module && !process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
   const PORT = process.env.PORT || 8000;
   app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);

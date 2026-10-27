@@ -20,6 +20,11 @@ pool.on('error', (err) => {
 });
 
 async function initPostgres() {
+  if (!process.env.PG_PASSWORD) {
+    console.warn("⚠️ PG_PASSWORD is not set in environment variables. Skipping PostgreSQL auto-init.");
+    return;
+  }
+
   try {
     const client = await pool.connect();
     console.log('✅ Connected to Aiven PostgreSQL database successfully!');
