@@ -7,15 +7,28 @@ const { pool } = require("../config/postgres");
 const { sendDiwaliVerificationToken } = require("../services/emailService");
 const { adminAuth } = require("../middleware/auth");
 
-// Ensure payment screenshots directory exists
-const uploadDir = path.join(__dirname, "../uploads/payments");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// Ensure payment screenshots directory exists (handles Vercel read-only filesystem by using /tmp)
+const isServerless = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const uploadDir = isServerless
+  ? path.join("/tmp", "uploads", "payments")
+  : path.join(__dirname, "../uploads/payments");
+
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (err) {
+  console.warn("Upload dir initialization notice:", err.message);
 }
 
 // Multer Storage Configuration
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
+    try {
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+    } catch (e) {}
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
