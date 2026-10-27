@@ -238,7 +238,7 @@ router.post("/register", upload.single("paymentScreenshot"), async (req, res) =>
 // ========================================================
 router.get("/registrations", async (req, res) => {
   try {
-    const { status, category, search } = req.query;
+    const { status, category, search, date, startDate, endDate } = req.query;
 
     let query = "SELECT * FROM diwali_registrations";
     const conditions = [];
@@ -265,6 +265,21 @@ router.get("/registrations", async (req, res) => {
         LOWER(COALESCE(token, '')) LIKE $${values.length} OR
         LOWER(registration_id) LIKE $${values.length}
       )`);
+    }
+
+    if (date && date.trim()) {
+      values.push(date.trim());
+      conditions.push(`created_at::date = $${values.length}::date`);
+    }
+
+    if (startDate && startDate.trim()) {
+      values.push(startDate.trim());
+      conditions.push(`created_at::date >= $${values.length}::date`);
+    }
+
+    if (endDate && endDate.trim()) {
+      values.push(endDate.trim());
+      conditions.push(`created_at::date <= $${values.length}::date`);
     }
 
     if (conditions.length > 0) {
@@ -490,6 +505,55 @@ router.post("/resend-token/:id", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to resend token email",
+      error: error.message,
+    });
+  }
+});
+
+// ========================================================
+// 6. DELETE /api/diwali/registration/:id
+// Admin Deletes a Registration (and cleans up local file)
+// ========================================================
+router.delete("/registration/:id", async (req, res) => {
+  try {
+    const regId = req.params.id;
+
+    // Check if participant exists
+    const checkRes = await pool.query("SELECT * FROM diwali_registrations WHERE id = $1", [regId]);
+    if (checkRes.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Registration not found",
+      });
+    }
+
+    const participant = checkRes.rows[0];
+
+    // Safely delete payment screenshot file if it exists locally
+    if (participant.payment_screenshot && !isServerless) {
+      try {
+        const localFileName = path.basename(participant.payment_screenshot);
+        const localFilePath = path.join(uploadDir, localFileName);
+        if (fs.existsSync(localFilePath)) {
+          fs.unlinkSync(localFilePath);
+        }
+      } catch (fileErr) {
+        console.warn("Could not delete payment screenshot file:", fileErr.message);
+      }
+    }
+
+    await pool.query("DELETE FROM diwali_registrations WHERE id = $1", [regId]);
+
+    res.json({
+      success: true,
+      message: `Registration for ${participant.name} (${participant.token || participant.registration_id}) deleted successfully.`,
+      deletedId: regId,
+    });
+  } catch (error) {
+    console.error("Delete registration error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete registration",
       error: error.message,
     });
   }
