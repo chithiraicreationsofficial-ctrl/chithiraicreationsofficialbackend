@@ -389,9 +389,34 @@ router.get("/stats", async (req, res) => {
   }
 });
 
+// Helper function to generate sequential category tokens (REFR01 for Reels, REFP01 for Photos)
+const generateNextToken = async (category) => {
+  const isReel = (category || "").toLowerCase().includes("reel");
+  const prefix = isReel ? "REFR" : "REFP";
+
+  const tokenRes = await pool.query(
+    "SELECT token FROM diwali_registrations WHERE token ILIKE $1",
+    [`${prefix}%`]
+  );
+
+  let maxNum = 0;
+  for (const row of tokenRes.rows) {
+    if (row.token) {
+      const match = row.token.match(new RegExp(`${prefix}(\\d+)`, "i"));
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    }
+  }
+
+  const nextNumber = maxNum + 1;
+  return `${prefix}${String(nextNumber).padStart(2, "0")}`;
+};
+
 // ========================================================
 // 4. POST /api/diwali/verify/:id
-// Admin Verifies Participant, Assigns DDPVREG01 Token, and Sends Email
+// Admin Verifies Participant, Assigns REFR01/REFP01 Token, and Sends Email
 // ========================================================
 router.post("/verify/:id", async (req, res) => {
   try {
@@ -410,11 +435,9 @@ router.post("/verify/:id", async (req, res) => {
 
     let token = participant.token;
 
-    // If token does not exist yet, generate sequential DDPVREG01, DDPVREG02...
+    // If token does not exist yet, generate sequential REFR01 (Reels) or REFP01 (Photos)
     if (!token) {
-      const countRes = await pool.query("SELECT COUNT(*) FROM diwali_registrations WHERE token IS NOT NULL");
-      const nextNumber = parseInt(countRes.rows[0].count, 10) + 1;
-      token = `DDPVREG${String(nextNumber).padStart(2, "0")}`;
+      token = await generateNextToken(participant.category);
     }
 
     const verifiedBy = req.body.verifiedBy || "Chithirai Creations Admin";
@@ -554,6 +577,155 @@ router.delete("/registration/:id", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to delete registration",
+      error: error.message,
+    });
+  }
+});
+
+// ========================================================
+// 7. POST /api/diwali/admin-register
+// Admin Directly Registers a Participant:
+// Automatically Marks VERIFIED, Generates REFR01/REFP01 Token,
+// and Dispatches Official Email Immediately (No verification needed)
+// ========================================================
+router.post("/admin-register", upload.single("paymentScreenshot"), async (req, res) => {
+  try {
+    const {
+      name,
+      age,
+      gender = "Female",
+      state = "Tamil Nadu",
+      district = "Madurai",
+      instagramProfile,
+      phone,
+      email,
+      sweetName,
+      category = "Reel Category",
+      ingredients = "",
+      adminName = "Chithirai Creations Admin",
+    } = req.body;
+
+    // Validate Required Fields
+    if (!name || !age || !gender || !district || !instagramProfile || !phone || !email || !sweetName) {
+      if (req.file) fs.unlink(req.file.path, () => {});
+      return res.status(400).json({
+        success: false,
+        message: "Please fill in all required fields (Name, Age, Gender, District, Instagram, Phone, Email, Sweet Name).",
+      });
+    }
+
+    if (Number(age) < 4) {
+      if (req.file) fs.unlink(req.file.path, () => {});
+      return res.status(400).json({
+        success: false,
+        message: "Minimum age required to participate is 4 years+.",
+      });
+    }
+
+    const cleanPhone = phone.replace(/\D/g, "");
+    if (cleanPhone.length !== 10) {
+      if (req.file) fs.unlink(req.file.path, () => {});
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid 10-digit mobile number.",
+      });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      if (req.file) fs.unlink(req.file.path, () => {});
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid email address.",
+      });
+    }
+
+    // Check duplicate phone in PostgreSQL
+    const existingPhone = await pool.query(
+      "SELECT id, phone, name, token FROM diwali_registrations WHERE phone = $1",
+      [cleanPhone]
+    );
+    if (existingPhone.rows.length > 0) {
+      if (req.file) fs.unlink(req.file.path, () => {});
+      return res.status(400).json({
+        success: false,
+        message: `This phone number (${cleanPhone}) is already registered (${existingPhone.rows[0].name} - ${existingPhone.rows[0].token || "Pending"}). Duplicate entry is not allowed.`,
+      });
+    }
+
+    // Check duplicate email in PostgreSQL
+    const existingEmail = await pool.query(
+      "SELECT id, email, name, token FROM diwali_registrations WHERE LOWER(email) = LOWER($1)",
+      [cleanEmail]
+    );
+    if (existingEmail.rows.length > 0) {
+      if (req.file) fs.unlink(req.file.path, () => {});
+      return res.status(400).json({
+        success: false,
+        message: `This email (${cleanEmail}) is already registered (${existingEmail.rows[0].name} - ${existingEmail.rows[0].token || "Pending"}). Duplicate entry is not allowed.`,
+      });
+    }
+
+    // Automatically generate next token based on Category: REFR01 for Reels, REFP01 for Photos
+    const token = await generateNextToken(category);
+
+    const registrationId =
+      "DDPV-" + Date.now().toString(36).toUpperCase() + "-" + Math.floor(Math.random() * 900 + 100);
+
+    const paymentScreenshotUrl = req.file ? `/uploads/payments/${req.file.filename}` : null;
+
+    // Insert directly as VERIFIED with Token and verified details
+    const insertQuery = `
+      INSERT INTO diwali_registrations (
+        registration_id, name, age, gender, state, district,
+        phone, email, instagram_profile, sweet_name, category,
+        ingredients, payment_screenshot, status, token,
+        verified_at, verified_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'VERIFIED', $14, CURRENT_TIMESTAMP, $15)
+      RETURNING *
+    `;
+
+    const values = [
+      registrationId,
+      name.trim(),
+      Number(age),
+      gender,
+      state || "Tamil Nadu",
+      district.trim(),
+      cleanPhone,
+      cleanEmail,
+      instagramProfile.trim(),
+      sweetName.trim(),
+      category,
+      ingredients ? ingredients.trim() : "",
+      paymentScreenshotUrl,
+      token,
+      adminName,
+    ];
+
+    const result = await pool.query(insertQuery, values);
+    const newRecord = result.rows[0];
+
+    // Immediately send verification token email to participant
+    const emailResult = await sendDiwaliVerificationToken(newRecord, token);
+
+    res.status(201).json({
+      success: true,
+      message: emailResult.success
+        ? `Registration successful! Token ${token} generated and emailed directly to ${newRecord.email}. No verification required.`
+        : `Registration created with Token ${token}. Direct email delivery will be retried (or click Resend Token).`,
+      token: token,
+      emailSent: emailResult.success,
+      emailMessageId: emailResult.messageId || null,
+      data: newRecord,
+    });
+  } catch (error) {
+    if (req.file) fs.unlink(req.file.path, () => {});
+    console.error("Admin direct registration error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error during admin direct registration",
       error: error.message,
     });
   }

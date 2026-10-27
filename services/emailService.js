@@ -1205,25 +1205,43 @@ const sendDiwaliVerificationToken = async (participant, token) => {
 
                         <table class="details-table">
                             <tr>
-                                <td class="label">Registration ID</td>
-                                <td class="value">${participant.registration_id || participant.registrationId}</td>
+                                <td class="label">Participant Name</td>
+                                <td class="value"><strong>${participant.name}</strong></td>
                             </tr>
                             <tr>
-                                <td class="label">Participant Name</td>
-                                <td class="value">${participant.name}</td>
+                                <td class="label">Gender &amp; Age</td>
+                                <td class="value">${participant.gender || "—"} • ${participant.age} Years</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Mobile Number</td>
+                                <td class="value">${participant.phone}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Email Address</td>
+                                <td class="value">${participant.email}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">District &amp; State</td>
+                                <td class="value">${participant.district}, ${participant.state || "Tamil Nadu"}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Instagram Profile</td>
+                                <td class="value">${participant.instagram_profile || participant.instagramProfile || "—"}</td>
                             </tr>
                             <tr>
                                 <td class="label">Sweet / Palagaram</td>
-                                <td class="value">${participant.sweet_name || participant.sweetName}</td>
+                                <td class="value"><strong>${participant.sweet_name || participant.sweetName}</strong></td>
                             </tr>
                             <tr>
-                                <td class="label">Category</td>
-                                <td class="value">${participant.category}</td>
+                                <td class="label">Contest Category</td>
+                                <td class="value"><strong style="color: #ffd700;">${participant.category}</strong></td>
                             </tr>
+                            ${participant.ingredients ? `
                             <tr>
-                                <td class="label">District</td>
-                                <td class="value">${participant.district}, Tamil Nadu</td>
+                                <td class="label">Ingredients / Recipe</td>
+                                <td class="value" style="font-size: 13px; line-height: 1.5;">${participant.ingredients}</td>
                             </tr>
+                            ` : ""}
                         </table>
 
                         <div class="steps-box">
