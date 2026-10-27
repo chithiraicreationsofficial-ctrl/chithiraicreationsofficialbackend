@@ -292,7 +292,7 @@ router.get("/registrations", async (req, res) => {
 
 // ========================================================
 // 3. GET /api/diwali/stats
-// Quick Stats for Admin Panel
+// Quick Stats & Analytics for Diwali Contest Dashboard
 // ========================================================
 router.get("/stats", async (req, res) => {
   try {
@@ -301,6 +301,40 @@ router.get("/stats", async (req, res) => {
     const pendingRes = await pool.query("SELECT COUNT(*) FROM diwali_registrations WHERE status = 'PENDING'");
     const reelRes = await pool.query("SELECT COUNT(*) FROM diwali_registrations WHERE category = 'Reel Category'");
     const photoRes = await pool.query("SELECT COUNT(*) FROM diwali_registrations WHERE category = 'Photo Category'");
+
+    // Top participating districts
+    const districtRes = await pool.query(`
+      SELECT district, COUNT(*) as count 
+      FROM diwali_registrations 
+      GROUP BY district 
+      ORDER BY count DESC 
+      LIMIT 8
+    `);
+
+    // Gender breakdown
+    const genderRes = await pool.query(`
+      SELECT gender, COUNT(*) as count 
+      FROM diwali_registrations 
+      GROUP BY gender 
+      ORDER BY count DESC
+    `);
+
+    // Top sweets
+    const sweetRes = await pool.query(`
+      SELECT sweet_name, category, COUNT(*) as count 
+      FROM diwali_registrations 
+      GROUP BY sweet_name, category 
+      ORDER BY count DESC 
+      LIMIT 6
+    `);
+
+    // Recent 8 registrations for live feed
+    const recentRes = await pool.query(`
+      SELECT id, registration_id, token, name, phone, email, district, sweet_name, category, status, created_at, payment_screenshot
+      FROM diwali_registrations
+      ORDER BY created_at DESC
+      LIMIT 8
+    `);
 
     const total = parseInt(totalRes.rows[0].count, 10);
     const verified = parseInt(verifiedRes.rows[0].count, 10);
@@ -315,6 +349,20 @@ router.get("/stats", async (req, res) => {
         reelCategoryCount: parseInt(reelRes.rows[0].count, 10),
         photoCategoryCount: parseInt(photoRes.rows[0].count, 10),
         totalFeeCollected: total * 249,
+        districtBreakdown: districtRes.rows.map((r) => ({
+          district: r.district,
+          count: parseInt(r.count, 10),
+        })),
+        genderBreakdown: genderRes.rows.map((r) => ({
+          gender: r.gender,
+          count: parseInt(r.count, 10),
+        })),
+        topSweets: sweetRes.rows.map((r) => ({
+          sweetName: r.sweet_name,
+          category: r.category,
+          count: parseInt(r.count, 10),
+        })),
+        recentRegistrations: recentRes.rows,
       },
     });
   } catch (error) {
@@ -373,14 +421,17 @@ router.post("/verify/:id", async (req, res) => {
 
     const updatedParticipant = updateRes.rows[0];
 
-    // Send the official verification token email via nodemailer
-    const emailSent = await sendDiwaliVerificationToken(updatedParticipant, token);
+    // Send the official verification token email via nodemailer with automatic retry
+    const emailResult = await sendDiwaliVerificationToken(updatedParticipant, token);
 
     res.json({
       success: true,
-      message: `Participant verified successfully! Official Token ${token} generated and emailed to ${updatedParticipant.email}.`,
+      message: emailResult.success
+        ? `Participant verified successfully! Official Token ${token} generated and emailed to ${updatedParticipant.email}.`
+        : `Participant verified with Token ${token}. Email delivery could not complete immediately — please click Resend Token.`,
       token: token,
-      emailSent: emailSent,
+      emailSent: emailResult.success,
+      emailMessageId: emailResult.messageId || null,
       data: updatedParticipant,
     });
   } catch (error) {
@@ -418,12 +469,21 @@ router.post("/resend-token/:id", async (req, res) => {
       });
     }
 
-    const emailSent = await sendDiwaliVerificationToken(participant, participant.token);
+    const emailResult = await sendDiwaliVerificationToken(participant, participant.token);
+
+    if (!emailResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: `Failed to resend email to ${participant.email}: ${emailResult.error || "SMTP error"}`,
+      });
+    }
 
     res.json({
       success: true,
       message: `Token email resent successfully to ${participant.email}!`,
-      emailSent: emailSent,
+      token: participant.token,
+      emailSent: true,
+      emailMessageId: emailResult.messageId || null,
     });
   } catch (error) {
     console.error("Resend token error:", error);

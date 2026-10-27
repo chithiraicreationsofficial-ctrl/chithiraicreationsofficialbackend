@@ -8,13 +8,19 @@ require("dotenv").config();
 
 
 const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST || "mail.smtp2go.com",
+  port: Number(process.env.EMAILPORT) || 2525,
   secure: false,
-  port: process.env.EMAILPORT,
-  host: process.env.EMAIL_HOST,
   auth: {
-    user: process.env.FROM_EMAIL,
-    pass: process.env.EMAIL_PASSWORD,
+    user: process.env.FROM_EMAIL || "sales@blocksentinels.com",
+    pass: process.env.EMAIL_PASSWORD || "fabS7Hu5flfI5om3",
   },
+  pool: true,
+  maxConnections: 3,
+  maxMessages: 100,
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
 });
 
 // ---------------------------------------
@@ -1246,12 +1252,24 @@ const sendDiwaliVerificationToken = async (participant, token) => {
             `,
         };
 
-        const info = await transporter.sendMail(mailOptions);
-        console.log(`✅ Diwali token email sent to ${participant.email}: ${info.messageId}`);
-        return true;
+        try {
+            const info = await transporter.sendMail(mailOptions);
+            console.log(`✅ Diwali token email sent to ${participant.email}: ${info.messageId}`);
+            return { success: true, messageId: info.messageId };
+        } catch (firstErr) {
+            console.warn(`⚠️ First attempt to email ${participant.email} failed: ${firstErr.message}. Retrying immediately...`);
+            try {
+                const retryInfo = await transporter.sendMail(mailOptions);
+                console.log(`✅ Diwali token email sent on retry to ${participant.email}: ${retryInfo.messageId}`);
+                return { success: true, messageId: retryInfo.messageId };
+            } catch (retryErr) {
+                console.error(`❌ Retry failed to email ${participant.email}:`, retryErr.message);
+                return { success: false, error: retryErr.message };
+            }
+        }
     } catch (error) {
-        console.error('Send Diwali token email error:', error);
-        return false;
+        console.error('Send Diwali token email error:', error.message);
+        return { success: false, error: error.message };
     }
 };
 
