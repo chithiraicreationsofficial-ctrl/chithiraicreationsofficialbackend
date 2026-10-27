@@ -1065,6 +1065,7 @@ const sendAdminCreatedTicketEmail = async (
 // ---------------------------------------
 const sendDiwaliVerificationToken = async (participant, token) => {
     try {
+        const isReel = (participant.category || "").toLowerCase().includes("reel");
         const mailOptions = {
             from: {
                 name: process.env.FROM_AME || "Chithirai Creations",
@@ -1260,32 +1261,71 @@ const sendDiwaliVerificationToken = async (participant, token) => {
                             ` : ""}
                         </table>
 
-                        <!-- Next Steps Box -->
+                        <!-- Next Steps Box (Category Specific Rules) -->
+                        ${isReel ? `
                         <div class="steps-box" style="background-color: #2b1300; border: 2px dashed #ff9800; border-radius: 12px; padding: 20px; margin: 25px 0;" bgcolor="#2b1300">
                             <h3 style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important; margin: 0 0 12px 0; font-size: 16px; font-weight: 800;">
-                                <span style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">Next Steps to Participate:</span>
+                                <span style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">🎥 Reel Category — Rules &amp; Next Steps:</span>
                             </h3>
                             <ol style="margin: 0; padding-left: 20px; color: #ffffff !important;">
                                 <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
-                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">Make your unique Diwali sweet or snack yourself.</span>
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">Make ONE unique Diwali sweet or snack yourself.</span>
                                 </li>
                                 <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
-                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">Record a <strong>90-sec Reel (you in it)</strong> &amp; click <strong>5 Photos</strong> on mobile in order: <em>Ingredients → Making → SVS Product in use → Dish → Final dish with you</em>.</span>
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">Record an <strong>exact 90-sec Reel on mobile (you must be in the video)</strong> covering all 5 steps in order: <em>Ingredients → Making → SVS Product in use → Finished Dish → Final dish with you</em>.</span>
                                 </li>
                                 <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
-                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;"><strong>MAIN POINT: SVS Product</strong> (Choose any 1): Option 1: Use SVS product in photo/video, OR Option 2: Mention SVS slogan in description (Photo) or speak in video (Reel).</span>
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;"><strong>Voiceover in your own voice</strong>: Explain all ingredients and the full cooking procedure in the video in your own voice at every step. <em>(No standalone songs/BGM only, No AI voiceover allowed)</em>.</span>
                                 </li>
                                 <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
-                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;"><strong>Mention your Official Token (${token})</strong> in your Instagram caption.</span>
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;"><strong>MAIN POINT: SVS Product (Choose any 1 option)</strong>:<br/>
+                                    &bull; <strong>Option 1</strong>: Feature and use the SVS product clearly in your reel video.<br/>
+                                    &bull; <strong>Option 2</strong>: Speak the SVS slogan clearly in your video voiceover.</span>
                                 </li>
                                 <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
-                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;"><strong>COLLAB IS A MUST:</strong> Collab with BOTH accounts: <strong>@chithirai.creations</strong> and <strong>@svsfoods</strong>.</span>
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;"><strong>Token in Caption</strong>: Mention your official Token (<strong>${token}</strong>) in your Reel caption.</span>
                                 </li>
                                 <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
-                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">Upload between <strong>28 Oct and 09 Nov 2026</strong>.</span>
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;"><strong>COLLAB IS A MUST</strong>: Collab with BOTH accounts: <strong>@chithirai.creations</strong> and <strong>@svsfoods</strong>.</span>
+                                </li>
+                                <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">Upload on Instagram between <strong>28 Oct and 09 Nov 2026</strong>. <em>(100% own content, no cooking influencers / accounts &gt; 2,000 followers)</em>.</span>
                                 </li>
                             </ol>
                         </div>
+                        ` : `
+                        <div class="steps-box" style="background-color: #2b1300; border: 2px dashed #ff9800; border-radius: 12px; padding: 20px; margin: 25px 0;" bgcolor="#2b1300">
+                            <h3 style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important; margin: 0 0 12px 0; font-size: 16px; font-weight: 800;">
+                                <span style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">📸 Photo Category — Rules &amp; Next Steps:</span>
+                            </h3>
+                            <ol style="margin: 0; padding-left: 20px; color: #ffffff !important;">
+                                <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">Make ONE unique Diwali sweet or snack yourself.</span>
+                                </li>
+                                <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">Click <strong>5 Photos on mobile, all taken by you</strong>, in this exact order:<br/>
+                                    1️⃣ <em>Ingredients</em> &bull; 2️⃣ <em>Making process</em> &bull; 3️⃣ <em>SVS product in use</em> &bull; 4️⃣ <em>Finished Dish</em> &bull; 5️⃣ <em>Final dish with you</em>.</span>
+                                </li>
+                                <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;"><strong>Recipe in Description</strong>: Write the complete ingredients list and step-by-step cooking procedure in your Instagram post description.</span>
+                                </li>
+                                <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;"><strong>MAIN POINT: SVS Product (Choose any 1 option)</strong>:<br/>
+                                    &bull; <strong>Option 1</strong>: Include the SVS product clearly in your photos (near the dish or ingredients).<br/>
+                                    &bull; <strong>Option 2</strong>: Mention the official SVS slogan in your post description.</span>
+                                </li>
+                                <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;"><strong>Token in Caption</strong>: Mention your official Token (<strong>${token}</strong>) in your Instagram post caption.</span>
+                                </li>
+                                <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;"><strong>COLLAB IS A MUST</strong>: Collab with BOTH accounts: <strong>@chithirai.creations</strong> and <strong>@svsfoods</strong>.</span>
+                                </li>
+                                <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">Upload on Instagram between <strong>28 Oct and 09 Nov 2026</strong>. <em>(100% own photos, no cooking influencers / accounts &gt; 2,000 followers)</em>.</span>
+                                </li>
+                            </ol>
+                        </div>
+                        `}
 
                         <p style="text-align: center; color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important; font-weight: 800; margin-top: 25px; font-size: 14px;">
                             <span style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">🏆 Prizes Worth ₹1,00,000 + Top 50 Win ₹300 SVS Hampers!</span>
