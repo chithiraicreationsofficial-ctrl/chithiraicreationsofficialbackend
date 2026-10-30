@@ -27,9 +27,27 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// Cross-Origin Resource Sharing (CORS) - Allows local and Vercel domains
+// Cross-Origin Resource Sharing (CORS) - Allows local and production domains
+const allowedOrigins = [
+  'https://www.chithiraicreations.in',
+  'https://chithiraicreations.in',
+  'https://chithiraicreationsofficialfrontend.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5173'
+];
+
 app.use(cors({
-  origin: true, // Reflect request origin
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.chithiraicreations.in') ||
+      origin.endsWith('.vercel.app')
+    ) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
@@ -58,7 +76,9 @@ app.get('/', (req, res) => {
     success: true,
     name: 'Chithirai Creations API',
     status: 'Online',
-    environment: process.env.NODE_ENV || 'development',
+    domain: 'https://api.chithiraicreations.in',
+    frontend: 'https://www.chithiraicreations.in',
+    environment: process.env.NODE_ENV || 'production',
     serverless: isServerless,
     timestamp: new Date().toISOString()
   });

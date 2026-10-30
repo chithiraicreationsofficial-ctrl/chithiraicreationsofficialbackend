@@ -117,7 +117,7 @@ class QRService {
 
         console.log(ticketId, "ticketId");
 
-        const BASE_URL = 'https://www.chithiraicreations.com';
+        const BASE_URL = process.env.FRONTEND_URL || 'https://www.chithiraicreations.in';
 
         const verificationURL = `${BASE_URL}/readyamamaey?ticketId=${ticketId.ticketId}`;
 
