@@ -8,6 +8,7 @@ const { validateAdminLogin } = require("../middleware/validation");
 const { adminLoginLimiter } = require("../middleware/rateLimit");
 
 // Public routes
+router.post("/auth/login", adminLoginLimiter, adminController.loginStep1);
 router.post("/auth/login-step1", adminLoginLimiter, adminController.loginStep1);
 router.post("/auth/login-step2", adminLoginLimiter, adminController.loginStep2);
 

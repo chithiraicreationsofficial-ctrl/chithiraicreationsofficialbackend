@@ -8,7 +8,7 @@ const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
 
 const adminController = {
-  // Step 1: Email/Password login
+  // Step 1: Email/Password login (Direct login, MFA removed)
   async loginStep1(req, res) {
     try {
       const { email, password } = req.body;
@@ -21,7 +21,7 @@ const adminController = {
       }
 
       // Find active admin
-      const admin = await Admin.findOne({ email, isActive: true });
+      const admin = await Admin.findOne({ email: email.toLowerCase().trim(), isActive: true });
       if (!admin) {
         return res.status(200).json({
           success: false,
@@ -38,16 +38,35 @@ const adminController = {
         });
       }
 
-      // Return success with requires 2FA flag
+      // Update last login
+      admin.lastLogin = new Date();
+      await admin.save();
+
+      // Generate admin JWT token directly (no MFA needed)
+      const token = jwt.sign(
+        {
+          adminId: admin._id,
+          email: admin.email,
+          name: admin.name,
+          role: admin.role,
+          loginTime: new Date(),
+        },
+        process.env.ADMIN_JWT_SECRET,
+        { expiresIn: "24h" }
+      );
+
       res.json({
         success: true,
-        message: "Please enter 2FA code",
+        message: "Admin login successful",
         data: {
-          requires2FA: true,
+          token,
+          requires2FA: false,
           admin: {
             id: admin._id,
             name: admin.name,
             email: admin.email,
+            role: admin.role,
+            lastLogin: admin.lastLogin,
           },
         },
       });
@@ -60,32 +79,23 @@ const adminController = {
     }
   },
 
-  // Step 2: 2FA verification
+  // Step 2: 2FA verification (bypassed / backward compatibility)
   async loginStep2(req, res) {
     try {
-      const { email, twoFACode } = req.body;
+      const { email } = req.body;
 
-      if (!email || !twoFACode) {
+      if (!email) {
         return res.status(200).json({
           success: false,
-          message: "Email and 2FA code are required",
+          message: "Email is required",
         });
       }
 
-      const admin = await Admin.findOne({ email, isActive: true });
+      const admin = await Admin.findOne({ email: email.toLowerCase().trim(), isActive: true });
       if (!admin) {
         return res.status(200).json({
           success: false,
           message: "Admin not found",
-        });
-      }
-
-      // Verify 2FA code
-      const is2FAValid = (process.env.ADMIN_2FA_CODE && twoFACode === process.env.ADMIN_2FA_CODE) || admin.verifyTwoFA(twoFACode);
-      if (!is2FAValid) {
-        return res.status(200).json({
-          success: false,
-          message: "Invalid 2FA code",
         });
       }
 
@@ -103,7 +113,7 @@ const adminController = {
           loginTime: new Date(),
         },
         process.env.ADMIN_JWT_SECRET,
-        { expiresIn: "8h" }
+        { expiresIn: "24h" }
       );
 
       res.json({
@@ -129,45 +139,80 @@ const adminController = {
     }
   },
 
-  // Legacy login (backward compatibility)
+  // Direct login / Legacy login (backward compatibility)
   async login(req, res) {
     try {
-      const { twoFACode } = req.body;
+      const { email, password, twoFACode } = req.body;
 
-      if (twoFACode !== process.env.ADMIN_2FA_CODE) {
-        return res.status(200).json({
-          success: false,
-          message: "Invalid 2FA code",
+      // Direct email/password login
+      if (email && password) {
+        const admin = await Admin.findOne({ email: email.toLowerCase().trim(), isActive: true });
+        if (admin && (await admin.verifyPassword(password))) {
+          admin.lastLogin = new Date();
+          await admin.save();
+
+          const token = jwt.sign(
+            {
+              adminId: admin._id,
+              email: admin.email,
+              name: admin.name,
+              role: admin.role,
+              loginTime: new Date(),
+            },
+            process.env.ADMIN_JWT_SECRET,
+            { expiresIn: "24h" }
+          );
+
+          return res.json({
+            success: true,
+            message: "Admin login successful",
+            data: {
+              token,
+              admin: {
+                id: admin._id,
+                name: admin.name,
+                email: admin.email,
+                role: admin.role,
+              },
+            },
+          });
+        }
+      }
+
+      // Legacy 2FA fallback
+      if (twoFACode && process.env.ADMIN_2FA_CODE && twoFACode === process.env.ADMIN_2FA_CODE) {
+        const tempAdmin = {
+          _id: "legacy_admin",
+          email: "legacy@chithiraicreations.com",
+          name: "Legacy Admin",
+          role: "admin",
+        };
+
+        const token = jwt.sign(
+          {
+            adminId: tempAdmin._id,
+            email: tempAdmin.email,
+            name: tempAdmin.name,
+            role: tempAdmin.role,
+            loginTime: new Date(),
+          },
+          process.env.ADMIN_JWT_SECRET,
+          { expiresIn: "24h" }
+        );
+
+        return res.json({
+          success: true,
+          message: "Admin login successful",
+          data: {
+            token,
+            admin: tempAdmin,
+          },
         });
       }
 
-      // Create a temporary admin for legacy login
-      const tempAdmin = {
-        _id: "legacy_admin",
-        email: "legacy@chithiraicreations.com",
-        name: "Legacy Admin",
-        role: "admin",
-      };
-
-      const token = jwt.sign(
-        {
-          adminId: tempAdmin._id,
-          email: tempAdmin.email,
-          name: tempAdmin.name,
-          role: tempAdmin.role,
-          loginTime: new Date(),
-        },
-        process.env.ADMIN_JWT_SECRET,
-        { expiresIn: "8h" }
-      );
-
-      res.json({
-        success: true,
-        message: "Admin login successful",
-        data: {
-          token,
-          admin: tempAdmin,
-        },
+      return res.status(200).json({
+        success: false,
+        message: "Invalid credentials",
       });
     } catch (error) {
       console.error("Admin login error:", error);

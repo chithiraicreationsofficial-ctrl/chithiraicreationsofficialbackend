@@ -47,10 +47,15 @@ const validateTicketBooking = [
 ];
 
 const validateAdminLogin = [
-    body('twoFACode')
-        .notEmpty()
-        .withMessage('2FA code is required'),
-    handleValidationErrors
+    (req, res, next) => {
+        if ((req.body.email && req.body.password) || req.body.twoFACode) {
+            return next();
+        }
+        return res.status(200).json({
+            success: false,
+            message: 'Email and password are required'
+        });
+    }
 ];
 
 module.exports = {

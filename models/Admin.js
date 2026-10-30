@@ -24,7 +24,7 @@ const adminSchema = new mongoose.Schema(
     },
     twoFASecret: {
       type: String,
-      required: true,
+      required: false,
     },
     role: {
       type: String,
