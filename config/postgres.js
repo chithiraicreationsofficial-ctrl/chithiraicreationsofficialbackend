@@ -55,10 +55,27 @@ async function initPostgres() {
 
       CREATE INDEX IF NOT EXISTS idx_diwali_phone ON diwali_registrations(phone);
       CREATE INDEX IF NOT EXISTS idx_diwali_email ON diwali_registrations(email);
+
+      CREATE TABLE IF NOT EXISTS inquiries (
+        id SERIAL PRIMARY KEY,
+        phone VARCHAR(20) NOT NULL,
+        name VARCHAR(255),
+        status VARCHAR(50) DEFAULT 'INQUIRY',
+        call_count INTEGER DEFAULT 1,
+        notes TEXT,
+        source VARCHAR(100) DEFAULT 'Direct Call',
+        last_called_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_inquiries_phone ON inquiries(phone);
+      CREATE INDEX IF NOT EXISTS idx_inquiries_status ON inquiries(status);
+      CREATE INDEX IF NOT EXISTS idx_inquiries_created_at ON inquiries(created_at);
     `);
 
     client.release();
-    console.log('✅ diwali_registrations PostgreSQL table schema verified.');
+    console.log('✅ diwali_registrations & inquiries PostgreSQL table schema verified.');
   } catch (error) {
     console.error('❌ Failed to connect/initialize PostgreSQL:', error.message);
   }

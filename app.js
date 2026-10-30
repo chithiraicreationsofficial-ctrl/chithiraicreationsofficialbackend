@@ -15,6 +15,7 @@ const adminRoutes = require('./routes/admin');
 const sponsorRoutes = require('./routes/sponsorship');
 const diwaliRoutes = require('./routes/diwali');
 const paymentRoutes = require('./routes/payments');
+const inquiryRoutes = require('./routes/inquiry');
 
 const app = express();
 
@@ -99,6 +100,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/sponsorships', sponsorRoutes);
 app.use('/api/diwali', diwaliRoutes);
+app.use('/api/inquiries', inquiryRoutes);
 
 // Global Error Handler
 app.use((error, req, res, next) => {
