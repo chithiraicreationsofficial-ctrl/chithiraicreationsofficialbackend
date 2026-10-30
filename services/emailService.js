@@ -1289,7 +1289,7 @@ const sendDiwaliVerificationToken = async (participant, token) => {
                                     <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;"><strong>COLLAB IS A MUST</strong>: Collab with BOTH accounts: <strong>@chithirai.creations</strong> and <strong>@svsfoods</strong>.</span>
                                 </li>
                                 <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
-                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">Upload on Instagram between <strong>28 Oct and 09 Nov 2026</strong>. <em>(100% own content, no cooking influencers / accounts &gt; 2,000 followers)</em>.</span>
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">Upload on Instagram between <strong>31 Oct and 09 Nov 2026</strong>. <em>(100% own content, no cooking influencers / accounts &gt; 2,000 followers)</em>.</span>
                                 </li>
                             </ol>
                         </div>
@@ -1321,7 +1321,7 @@ const sendDiwaliVerificationToken = async (participant, token) => {
                                     <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;"><strong>COLLAB IS A MUST</strong>: Collab with BOTH accounts: <strong>@chithirai.creations</strong> and <strong>@svsfoods</strong>.</span>
                                 </li>
                                 <li style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin-bottom: 8px; font-size: 13px; line-height: 1.6;">
-                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">Upload on Instagram between <strong>28 Oct and 09 Nov 2026</strong>. <em>(100% own photos, no cooking influencers / accounts &gt; 2,000 followers)</em>.</span>
+                                    <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">Upload on Instagram between <strong>31 Oct and 09 Nov 2026</strong>. <em>(100% own photos, no cooking influencers / accounts &gt; 2,000 followers)</em>.</span>
                                 </li>
                             </ol>
                         </div>
