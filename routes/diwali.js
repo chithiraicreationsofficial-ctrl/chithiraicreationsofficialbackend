@@ -583,7 +583,209 @@ router.delete("/registration/:id", async (req, res) => {
 });
 
 // ========================================================
-// 7. POST /api/diwali/admin-register
+// 7. PUT /api/diwali/registration/:id
+// Admin Edits/Updates an Existing Live Participant Registration
+// ========================================================
+router.put("/registration/:id", upload.single("paymentScreenshot"), async (req, res) => {
+  try {
+    const regId = req.params.id;
+
+    // Check if participant exists
+    const checkRes = await pool.query("SELECT * FROM diwali_registrations WHERE id = $1", [regId]);
+    if (checkRes.rows.length === 0) {
+      if (req.file) fs.unlink(req.file.path, () => {});
+      return res.status(404).json({
+        success: false,
+        message: "Registration not found",
+      });
+    }
+
+    const current = checkRes.rows[0];
+
+    const {
+      name,
+      age,
+      gender,
+      state,
+      district,
+      phone,
+      email,
+      instagramProfile,
+      instagram_profile,
+      sweetName,
+      sweet_name,
+      category,
+      ingredients,
+      token,
+      status,
+      resendEmail,
+    } = req.body;
+
+    const newName = name !== undefined ? name.trim() : current.name;
+    const newAge = age !== undefined && age !== "" ? parseInt(age) : current.age;
+    const newGender = gender !== undefined ? gender.trim() : current.gender;
+    const newState = state !== undefined ? state.trim() : current.state;
+    const newDistrict = district !== undefined ? district.trim() : current.district;
+    const newPhone = phone !== undefined ? phone.trim() : current.phone;
+    const newEmail = email !== undefined ? email.trim().toLowerCase() : current.email;
+    const newInstagram =
+      (instagramProfile || instagram_profile) !== undefined
+        ? (instagramProfile || instagram_profile).trim()
+        : current.instagram_profile;
+    const newSweetName =
+      (sweetName || sweet_name) !== undefined
+        ? (sweetName || sweet_name).trim()
+        : current.sweet_name;
+    const newCategory = category !== undefined ? category.trim() : current.category;
+    const newIngredients = ingredients !== undefined ? ingredients.trim() : current.ingredients;
+    const newToken = token !== undefined ? (token ? token.trim() : null) : current.token;
+    const newStatus = status !== undefined ? status.trim().toUpperCase() : current.status;
+
+    // Validate phone uniqueness if changed
+    if (newPhone && newPhone !== current.phone) {
+      const phoneCheck = await pool.query(
+        "SELECT id, name FROM diwali_registrations WHERE phone = $1 AND id != $2",
+        [newPhone, regId]
+      );
+      if (phoneCheck.rows.length > 0) {
+        if (req.file) fs.unlink(req.file.path, () => {});
+        return res.status(400).json({
+          success: false,
+          message: `Phone number ${newPhone} is already used by another participant (${phoneCheck.rows[0].name}).`,
+        });
+      }
+    }
+
+    // Validate email uniqueness if changed
+    if (newEmail && newEmail !== current.email) {
+      const emailCheck = await pool.query(
+        "SELECT id, name FROM diwali_registrations WHERE email = $1 AND id != $2",
+        [newEmail, regId]
+      );
+      if (emailCheck.rows.length > 0) {
+        if (req.file) fs.unlink(req.file.path, () => {});
+        return res.status(400).json({
+          success: false,
+          message: `Email ${newEmail} is already used by another participant (${emailCheck.rows[0].name}).`,
+        });
+      }
+    }
+
+    // Validate token uniqueness if changed
+    if (newToken && newToken !== current.token) {
+      const tokenCheck = await pool.query(
+        "SELECT id, name FROM diwali_registrations WHERE token ILIKE $1 AND id != $2",
+        [newToken, regId]
+      );
+      if (tokenCheck.rows.length > 0) {
+        if (req.file) fs.unlink(req.file.path, () => {});
+        return res.status(400).json({
+          success: false,
+          message: `Token ${newToken} is already assigned to another participant (${tokenCheck.rows[0].name}).`,
+        });
+      }
+    }
+
+    // Payment screenshot
+    let newPaymentScreenshot = current.payment_screenshot;
+    if (req.file) {
+      newPaymentScreenshot = `/uploads/payments/${req.file.filename}`;
+    }
+
+    const updateQuery = `
+      UPDATE diwali_registrations
+      SET name = $1,
+          age = $2,
+          gender = $3,
+          state = $4,
+          district = $5,
+          phone = $6,
+          email = $7,
+          instagram_profile = $8,
+          sweet_name = $9,
+          category = $10,
+          ingredients = $11,
+          token = $12,
+          status = $13,
+          payment_screenshot = $14,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = $15
+      RETURNING *;
+    `;
+
+    const updateRes = await pool.query(updateQuery, [
+      newName,
+      newAge,
+      newGender,
+      newState,
+      newDistrict,
+      newPhone,
+      newEmail,
+      newInstagram,
+      newSweetName,
+      newCategory,
+      newIngredients,
+      newToken,
+      newStatus,
+      newPaymentScreenshot,
+      regId,
+    ]);
+
+    const updatedParticipant = updateRes.rows[0];
+
+    // Also update inquiries table if phone exists there
+    try {
+      await pool.query(
+        `UPDATE inquiries 
+         SET name = $1, updated_at = CURRENT_TIMESTAMP 
+         WHERE phone = $2`,
+        [newName, newPhone]
+      );
+    } catch (inqErr) {}
+
+    // Send updated token email if requested
+    let emailStatus = "not_requested";
+    if (resendEmail === true || resendEmail === "true") {
+      try {
+        const emailResult = await sendDiwaliVerificationToken({
+          email: updatedParticipant.email,
+          name: updatedParticipant.name,
+          token: updatedParticipant.token,
+          category: updatedParticipant.category,
+          sweetName: updatedParticipant.sweet_name,
+          registrationId: updatedParticipant.registration_id,
+          gender: updatedParticipant.gender,
+          district: updatedParticipant.district,
+          state: updatedParticipant.state,
+          phone: updatedParticipant.phone,
+          instagramProfile: updatedParticipant.instagram_profile,
+        });
+        emailStatus = emailResult ? "sent" : "failed";
+      } catch (mailErr) {
+        console.error("Failed to send updated email:", mailErr.message);
+        emailStatus = "failed";
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: `Registration for ${updatedParticipant.name} updated successfully!`,
+      data: updatedParticipant,
+      emailStatus,
+    });
+  } catch (error) {
+    console.error("Update registration error:", error);
+    if (req.file) fs.unlink(req.file.path, () => {});
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update registration",
+      error: error.message,
+    });
+  }
+});
+
+// ========================================================
+// 8. POST /api/diwali/admin-register
 // Admin Directly Registers a Participant:
 // Automatically Marks VERIFIED, Generates REFR01/REFP01 Token,
 // and Dispatches Official Email Immediately (No verification needed)
