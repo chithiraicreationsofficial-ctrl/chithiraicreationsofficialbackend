@@ -56,6 +56,33 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
+const PaymentFile = require("../models/PaymentFile");
+
+// Helper to persist uploaded files directly into database (survives Vercel ephemeral containers)
+const persistPaymentFile = async (file) => {
+  if (!file || !file.path) return;
+  try {
+    const fileBuffer = fs.readFileSync(file.path);
+    await pool.query(
+      `INSERT INTO payment_files (filename, mime_type, data, size)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (filename) DO UPDATE 
+       SET data = EXCLUDED.data, mime_type = EXCLUDED.mime_type`,
+      [file.filename, file.mimetype, fileBuffer, file.size]
+    );
+
+    try {
+      await PaymentFile.findOneAndUpdate(
+        { filename: file.filename },
+        { filename: file.filename, mimeType: file.mimetype, data: fileBuffer, size: file.size },
+        { upsert: true }
+      );
+    } catch (mErr) {}
+  } catch (err) {
+    console.error("Failed to persist payment file to database:", err.message);
+  }
+};
+
 // ========================================================
 // 1. POST /api/diwali/register
 // Public Registration with Duplicate Check & Screenshot Upload
@@ -161,6 +188,8 @@ router.post("/register", upload.single("paymentScreenshot"), async (req, res) =>
       "DDPV-" + Date.now().toString(36).toUpperCase() + "-" + Math.floor(Math.random() * 900 + 100);
 
     const paymentScreenshotUrl = `/uploads/payments/${req.file.filename}`;
+    // Persist file into database to survive Vercel ephemeral serverless containers
+    await persistPaymentFile(req.file);
 
     // 5. Insert into PostgreSQL Database
     const insertQuery = `
@@ -690,6 +719,7 @@ router.put("/registration/:id", upload.single("paymentScreenshot"), async (req, 
     let newPaymentScreenshot = current.payment_screenshot;
     if (req.file) {
       newPaymentScreenshot = `/uploads/payments/${req.file.filename}`;
+      await persistPaymentFile(req.file);
     }
 
     const updateQuery = `
@@ -876,6 +906,7 @@ router.post("/admin-register", upload.single("paymentScreenshot"), async (req, r
       "DDPV-" + Date.now().toString(36).toUpperCase() + "-" + Math.floor(Math.random() * 900 + 100);
 
     const paymentScreenshotUrl = req.file ? `/uploads/payments/${req.file.filename}` : null;
+    if (req.file) await persistPaymentFile(req.file);
 
     // Insert directly as VERIFIED with Token and verified details
     const insertQuery = `

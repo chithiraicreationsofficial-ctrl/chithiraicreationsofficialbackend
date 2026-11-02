@@ -69,6 +69,51 @@ if (!fs.existsSync(uploadStaticDir)) {
   } catch (e) {}
 }
 
+// Serve payment uploads with persistent database fallback (guarantees images survive Vercel serverless cold starts)
+app.get('/uploads/payments/:filename', async (req, res) => {
+  const { filename } = req.params;
+
+  // 1. Check local filesystem first
+  const localFilePath = path.join(uploadStaticDir, 'payments', filename);
+  if (fs.existsSync(localFilePath)) {
+    return res.sendFile(localFilePath);
+  }
+
+  // 2. Fetch persistent binary file from PostgreSQL
+  try {
+    const { pool } = require('./config/postgres');
+    const result = await pool.query(
+      'SELECT mime_type, data FROM payment_files WHERE filename = $1 LIMIT 1',
+      [filename]
+    );
+
+    if (result.rows.length > 0) {
+      const { mime_type, data } = result.rows[0];
+      res.setHeader('Content-Type', mime_type || 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      return res.send(data);
+    }
+  } catch (pgErr) {
+    console.error('Error fetching file from Postgres:', pgErr.message);
+  }
+
+  // 3. Fallback to MongoDB
+  try {
+    const PaymentFile = require('./models/PaymentFile');
+    const mongoDoc = await PaymentFile.findOne({ filename });
+    if (mongoDoc && mongoDoc.data) {
+      res.setHeader('Content-Type', mongoDoc.mimeType || 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      return res.send(mongoDoc.data);
+    }
+  } catch (mErr) {}
+
+  return res.status(404).json({
+    success: false,
+    message: 'Payment screenshot not found or expired',
+  });
+});
+
 app.use('/uploads', express.static(uploadStaticDir));
 
 // Root Health Check Route

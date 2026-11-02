@@ -72,10 +72,21 @@ async function initPostgres() {
       CREATE INDEX IF NOT EXISTS idx_inquiries_phone ON inquiries(phone);
       CREATE INDEX IF NOT EXISTS idx_inquiries_status ON inquiries(status);
       CREATE INDEX IF NOT EXISTS idx_inquiries_created_at ON inquiries(created_at);
+
+      CREATE TABLE IF NOT EXISTS payment_files (
+        id SERIAL PRIMARY KEY,
+        filename VARCHAR(255) UNIQUE NOT NULL,
+        mime_type VARCHAR(100) NOT NULL,
+        data BYTEA NOT NULL,
+        size INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_payment_files_filename ON payment_files(filename);
     `);
 
     client.release();
-    console.log('✅ diwali_registrations & inquiries PostgreSQL table schema verified.');
+    console.log('✅ diwali_registrations, inquiries & payment_files PostgreSQL table schema verified.');
   } catch (error) {
     console.error('❌ Failed to connect/initialize PostgreSQL:', error.message);
   }
