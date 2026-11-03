@@ -1328,7 +1328,7 @@ const sendDiwaliVerificationToken = async (participant, token) => {
                         `}
 
                         <p style="text-align: center; color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important; font-weight: 800; margin-top: 25px; font-size: 14px;">
-                            <span style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">🏆 Prizes Worth ₹1,00,000 + Top 50 Win ₹300 SVS Hampers!</span>
+                            <span style="color: #ffd700 !important; -webkit-text-fill-color: #ffd700 !important;">🏆 Prizes Worth ₹1,00,000 + Top 50 Win ₹250 SVS Hampers!</span>
                         </p>
                     </div>
 
