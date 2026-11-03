@@ -647,6 +647,8 @@ router.put("/registration/:id", upload.single("paymentScreenshot"), async (req, 
       ingredients,
       token,
       status,
+      submissionUrl,
+      submission_url,
       resendEmail,
     } = req.body;
 
@@ -669,6 +671,10 @@ router.put("/registration/:id", upload.single("paymentScreenshot"), async (req, 
     const newIngredients = ingredients !== undefined ? ingredients.trim() : current.ingredients;
     const newToken = token !== undefined ? (token ? token.trim() : null) : current.token;
     const newStatus = status !== undefined ? status.trim().toUpperCase() : current.status;
+    const newSubmissionUrl =
+      (submissionUrl !== undefined || submission_url !== undefined)
+        ? ((submissionUrl || submission_url || "").trim() || null)
+        : current.submission_url;
 
     // Validate phone uniqueness if changed
     if (newPhone && newPhone !== current.phone) {
@@ -738,8 +744,9 @@ router.put("/registration/:id", upload.single("paymentScreenshot"), async (req, 
           token = $12,
           status = $13,
           payment_screenshot = $14,
+          submission_url = $15,
           updated_at = CURRENT_TIMESTAMP
-      WHERE id = $15
+      WHERE id = $16
       RETURNING *;
     `;
 
@@ -758,6 +765,7 @@ router.put("/registration/:id", upload.single("paymentScreenshot"), async (req, 
       newToken,
       newStatus,
       newPaymentScreenshot,
+      newSubmissionUrl,
       regId,
     ]);
 
@@ -834,6 +842,8 @@ router.post("/admin-register", upload.single("paymentScreenshot"), async (req, r
       sweetName,
       category = "Reel Category",
       ingredients = "",
+      submissionUrl = "",
+      submission_url = "",
       adminName = "Chithirai Creations Admin",
     } = req.body;
 
@@ -913,11 +923,13 @@ router.post("/admin-register", upload.single("paymentScreenshot"), async (req, r
       INSERT INTO diwali_registrations (
         registration_id, name, age, gender, state, district,
         phone, email, instagram_profile, sweet_name, category,
-        ingredients, payment_screenshot, status, token,
+        ingredients, payment_screenshot, submission_url, status, token,
         verified_at, verified_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'VERIFIED', $14, CURRENT_TIMESTAMP, $15)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'VERIFIED', $15, CURRENT_TIMESTAMP, $16)
       RETURNING *
     `;
+
+    const cleanSubmissionUrl = ((submissionUrl || submission_url || "").trim()) || null;
 
     const values = [
       registrationId,
@@ -933,6 +945,7 @@ router.post("/admin-register", upload.single("paymentScreenshot"), async (req, r
       category,
       ingredients ? ingredients.trim() : "",
       paymentScreenshotUrl,
+      cleanSubmissionUrl,
       token,
       adminName,
     ];

@@ -46,12 +46,15 @@ async function initPostgres() {
         category VARCHAR(100) NOT NULL,
         ingredients TEXT,
         payment_screenshot VARCHAR(500),
+        submission_url VARCHAR(500),
         status VARCHAR(50) DEFAULT 'PENDING',
         verified_at TIMESTAMP,
         verified_by VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+
+      ALTER TABLE diwali_registrations ADD COLUMN IF NOT EXISTS submission_url VARCHAR(500);
 
       CREATE INDEX IF NOT EXISTS idx_diwali_phone ON diwali_registrations(phone);
       CREATE INDEX IF NOT EXISTS idx_diwali_email ON diwali_registrations(email);
