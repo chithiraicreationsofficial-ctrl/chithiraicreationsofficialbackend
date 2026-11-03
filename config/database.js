@@ -3,19 +3,19 @@ const mongoose = require('mongoose');
 let isConnected = false;
 
 const connectDB = async () => {
-    if (isConnected) return;
+    if (isConnected && mongoose.connection.readyState === 1) return;
     
-    if (!process.env.MONGODB_URI) {
-        console.warn('⚠️ MONGODB_URI is not defined in environment variables.');
-        return;
-    }
+    const uri = process.env.MONGODB_URI || "mongodb+srv://raheswarandev:Rahes54321@clusterdino.pxbhsml.mongodb.net/chithiraicreation";
 
     try {
-        const conn = await mongoose.connect(process.env.MONGODB_URI);
+        const conn = await mongoose.connect(uri, {
+            serverSelectionTimeoutMS: 5000,
+            connectTimeoutMS: 5000,
+        });
         isConnected = true;
         console.log(`MongoDB Connected: ${conn.connection.host}`);
     } catch (error) {
-        console.error('Database connection error:', error.message);
+        console.warn('MongoDB connection error (continuing with PostgreSQL):', error.message);
         // Do not call process.exit(1) in serverless environments to prevent FUNCTION_INVOCATION_FAILED
         if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME && process.env.NODE_ENV !== 'production') {
             process.exit(1);

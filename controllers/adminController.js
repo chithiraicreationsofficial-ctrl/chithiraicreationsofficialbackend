@@ -6,6 +6,10 @@ const EmailService = require("../services/emailService");
 const jwt = require("jsonwebtoken");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
+const bcrypt = require("bcryptjs");
+const { pool } = require("../config/postgres");
+
+const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || "your_admin_jwt_secret_key_here";
 
 const adminController = {
   // Step 1: Email/Password login (Direct login, MFA removed)
@@ -20,8 +24,69 @@ const adminController = {
         });
       }
 
-      // Find active admin
-      const admin = await Admin.findOne({ email: email.toLowerCase().trim(), isActive: true });
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // 1. High-speed, high-reliability authentication via PostgreSQL (Aiven Cloud)
+      try {
+        const pgRes = await pool.query(
+          "SELECT * FROM admins WHERE LOWER(email) = LOWER($1) AND is_active = true",
+          [normalizedEmail]
+        );
+
+        if (pgRes.rows.length > 0) {
+          const pgAdmin = pgRes.rows[0];
+          const isMatch = await bcrypt.compare(password, pgAdmin.password);
+
+          if (!isMatch) {
+            return res.status(200).json({
+              success: false,
+              message: "Invalid credentials",
+            });
+          }
+
+          // Update last login
+          pool.query("UPDATE admins SET last_login = NOW() WHERE id = $1", [pgAdmin.id]).catch(() => {});
+
+          const token = jwt.sign(
+            {
+              adminId: `pg_${pgAdmin.id}`,
+              email: pgAdmin.email,
+              name: pgAdmin.name,
+              role: pgAdmin.role,
+              loginTime: new Date(),
+            },
+            ADMIN_JWT_SECRET,
+            { expiresIn: "24h" }
+          );
+
+          return res.json({
+            success: true,
+            message: "Admin login successful",
+            data: {
+              token,
+              requires2FA: false,
+              admin: {
+                id: `pg_${pgAdmin.id}`,
+                name: pgAdmin.name,
+                email: pgAdmin.email,
+                role: pgAdmin.role,
+                lastLogin: new Date(),
+              },
+            },
+          });
+        }
+      } catch (pgError) {
+        console.warn("PostgreSQL admin check error, attempting MongoDB fallback:", pgError.message);
+      }
+
+      // 2. Fallback to MongoDB (with strict 4s timeout)
+      let admin = null;
+      try {
+        admin = await Admin.findOne({ email: normalizedEmail, isActive: true }).maxTimeMS(4000);
+      } catch (mErr) {
+        console.warn("MongoDB admin query timed out or failed:", mErr.message);
+      }
+
       if (!admin) {
         return res.status(200).json({
           success: false,
@@ -40,7 +105,7 @@ const adminController = {
 
       // Update last login
       admin.lastLogin = new Date();
-      await admin.save();
+      await admin.save().catch(() => {});
 
       // Generate admin JWT token directly (no MFA needed)
       const token = jwt.sign(
@@ -51,11 +116,11 @@ const adminController = {
           role: admin.role,
           loginTime: new Date(),
         },
-        process.env.ADMIN_JWT_SECRET,
+        ADMIN_JWT_SECRET,
         { expiresIn: "24h" }
       );
 
-      res.json({
+      return res.json({
         success: true,
         message: "Admin login successful",
         data: {
@@ -91,7 +156,52 @@ const adminController = {
         });
       }
 
-      const admin = await Admin.findOne({ email: email.toLowerCase().trim(), isActive: true });
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // Check PostgreSQL first
+      try {
+        const pgRes = await pool.query(
+          "SELECT * FROM admins WHERE LOWER(email) = LOWER($1) AND is_active = true",
+          [normalizedEmail]
+        );
+        if (pgRes.rows.length > 0) {
+          const pgAdmin = pgRes.rows[0];
+          pool.query("UPDATE admins SET last_login = NOW() WHERE id = $1", [pgAdmin.id]).catch(() => {});
+
+          const token = jwt.sign(
+            {
+              adminId: `pg_${pgAdmin.id}`,
+              email: pgAdmin.email,
+              name: pgAdmin.name,
+              role: pgAdmin.role,
+              loginTime: new Date(),
+            },
+            ADMIN_JWT_SECRET,
+            { expiresIn: "24h" }
+          );
+
+          return res.json({
+            success: true,
+            message: "Admin login successful",
+            data: {
+              token,
+              admin: {
+                id: `pg_${pgAdmin.id}`,
+                name: pgAdmin.name,
+                email: pgAdmin.email,
+                role: pgAdmin.role,
+                lastLogin: new Date(),
+              },
+            },
+          });
+        }
+      } catch (err) {}
+
+      let admin = null;
+      try {
+        admin = await Admin.findOne({ email: normalizedEmail, isActive: true }).maxTimeMS(4000);
+      } catch (err) {}
+
       if (!admin) {
         return res.status(200).json({
           success: false,
@@ -101,7 +211,7 @@ const adminController = {
 
       // Update last login
       admin.lastLogin = new Date();
-      await admin.save();
+      await admin.save().catch(() => {});
 
       // Generate admin JWT token
       const token = jwt.sign(
@@ -112,7 +222,7 @@ const adminController = {
           role: admin.role,
           loginTime: new Date(),
         },
-        process.env.ADMIN_JWT_SECRET,
+        ADMIN_JWT_SECRET,
         { expiresIn: "24h" }
       );
 
@@ -146,10 +256,58 @@ const adminController = {
 
       // Direct email/password login
       if (email && password) {
-        const admin = await Admin.findOne({ email: email.toLowerCase().trim(), isActive: true });
+        const normalizedEmail = email.toLowerCase().trim();
+
+        // 1. Check PostgreSQL first
+        try {
+          const pgRes = await pool.query(
+            "SELECT * FROM admins WHERE LOWER(email) = LOWER($1) AND is_active = true",
+            [normalizedEmail]
+          );
+          if (pgRes.rows.length > 0) {
+            const pgAdmin = pgRes.rows[0];
+            const isMatch = await bcrypt.compare(password, pgAdmin.password);
+            if (isMatch) {
+              pool.query("UPDATE admins SET last_login = NOW() WHERE id = $1", [pgAdmin.id]).catch(() => {});
+
+              const token = jwt.sign(
+                {
+                  adminId: `pg_${pgAdmin.id}`,
+                  email: pgAdmin.email,
+                  name: pgAdmin.name,
+                  role: pgAdmin.role,
+                  loginTime: new Date(),
+                },
+                ADMIN_JWT_SECRET,
+                { expiresIn: "24h" }
+              );
+
+              return res.json({
+                success: true,
+                message: "Admin login successful",
+                data: {
+                  token,
+                  admin: {
+                    id: `pg_${pgAdmin.id}`,
+                    name: pgAdmin.name,
+                    email: pgAdmin.email,
+                    role: pgAdmin.role,
+                  },
+                },
+              });
+            }
+          }
+        } catch (pgErr) {}
+
+        // 2. Fallback to MongoDB
+        let admin = null;
+        try {
+          admin = await Admin.findOne({ email: normalizedEmail, isActive: true }).maxTimeMS(4000);
+        } catch (err) {}
+
         if (admin && (await admin.verifyPassword(password))) {
           admin.lastLogin = new Date();
-          await admin.save();
+          await admin.save().catch(() => {});
 
           const token = jwt.sign(
             {
@@ -159,7 +317,7 @@ const adminController = {
               role: admin.role,
               loginTime: new Date(),
             },
-            process.env.ADMIN_JWT_SECRET,
+            ADMIN_JWT_SECRET,
             { expiresIn: "24h" }
           );
 

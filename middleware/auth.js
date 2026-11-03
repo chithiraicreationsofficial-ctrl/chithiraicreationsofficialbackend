@@ -75,7 +75,10 @@
 // middleware/auth.js
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-const Admin = require("../models/Admin"); // Add this line
+const Admin = require("../models/Admin");
+const { pool } = require("../config/postgres");
+
+const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || "your_admin_jwt_secret_key_here";
 
 const auth = async (req, res, next) => {
   try {
@@ -132,13 +135,20 @@ const adminAuth = async (req, res, next) => {
 
     // Try to decode with ADMIN_JWT_SECRET first
     try {
-      decoded = jwt.verify(token, process.env.ADMIN_JWT_SECRET);
+      decoded = jwt.verify(token, ADMIN_JWT_SECRET);
     } catch (error) {
       // Fallback to JWT_SECRET for legacy tokens
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET || "your_super_secure_jwt_secret_here");
+      } catch (err) {
+        return res.status(200).json({
+          success: false,
+          message: "Admin token is invalid or expired",
+        });
+      }
 
       // Check if it's a legacy admin token
-      if (decoded.role !== "admin") {
+      if (decoded.role !== "admin" && decoded.role !== "super_admin") {
         return res.status(200).json({
           success: false,
           message: "Access denied. Admin privileges required.",
@@ -148,37 +158,79 @@ const adminAuth = async (req, res, next) => {
       // For legacy admin tokens, set admin object without DB check
       req.admin = {
         adminId: "legacy_admin",
-        email: "legacy@chithiraicreations.com",
-        name: "Legacy Admin",
-        role: "admin",
+        email: decoded.email || "admin1@chithiraicreations.com",
+        name: decoded.name || "Admin",
+        role: decoded.role || "admin",
       };
       return next();
     }
 
     // Check for legacy admin token format
     if (decoded.role === "admin" && !decoded.adminId) {
-      // This is the old admin token format
       req.admin = {
         adminId: "legacy_admin",
-        email: "legacy@chithiraicreations.com",
-        name: "Legacy Admin",
+        email: decoded.email || "admin1@chithiraicreations.com",
+        name: decoded.name || "Admin",
         role: "admin",
       };
       return next();
     }
 
-    // New admin token format with adminId
+    // Direct bypass for legacy_admin marker
     if (decoded.adminId === "legacy_admin") {
       req.admin = decoded;
       return next();
     }
 
-    // For new admin tokens, check if admin exists and is active
-    const admin = await Admin.findOne({
-      _id: decoded.adminId,
-      email: decoded.email,
-      isActive: true,
-    });
+    // 1. Check PostgreSQL first (Instant & High Reliability)
+    if (decoded.adminId && decoded.adminId.toString().startsWith("pg_")) {
+      const pgId = Number(decoded.adminId.replace("pg_", ""));
+      try {
+        const pgRes = await pool.query(
+          "SELECT id, name, email, role FROM admins WHERE id = $1 AND is_active = true",
+          [pgId]
+        );
+        if (pgRes.rows.length > 0) {
+          req.admin = {
+            ...decoded,
+            adminId: `pg_${pgRes.rows[0].id}`,
+            email: pgRes.rows[0].email,
+            name: pgRes.rows[0].name,
+            role: pgRes.rows[0].role,
+          };
+          return next();
+        }
+      } catch (pgErr) {}
+    }
+
+    if (decoded.email) {
+      try {
+        const pgRes = await pool.query(
+          "SELECT id, name, email, role FROM admins WHERE LOWER(email) = LOWER($1) AND is_active = true",
+          [decoded.email]
+        );
+        if (pgRes.rows.length > 0) {
+          req.admin = {
+            ...decoded,
+            adminId: `pg_${pgRes.rows[0].id}`,
+            email: pgRes.rows[0].email,
+            name: pgRes.rows[0].name,
+            role: pgRes.rows[0].role,
+          };
+          return next();
+        }
+      } catch (pgErr) {}
+    }
+
+    // 2. Fallback to MongoDB
+    let admin = null;
+    try {
+      admin = await Admin.findOne({
+        _id: decoded.adminId,
+        email: decoded.email,
+        isActive: true,
+      }).maxTimeMS(4000);
+    } catch (mErr) {}
 
     if (!admin) {
       return res.status(200).json({

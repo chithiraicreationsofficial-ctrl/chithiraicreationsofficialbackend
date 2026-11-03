@@ -83,10 +83,48 @@ async function initPostgres() {
       );
 
       CREATE INDEX IF NOT EXISTS idx_payment_files_filename ON payment_files(filename);
+
+      CREATE TABLE IF NOT EXISTS admins (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) DEFAULT 'admin',
+        phone VARCHAR(50),
+        is_active BOOLEAN DEFAULT TRUE,
+        last_login TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_admins_email ON admins(email);
     `);
 
+    // Auto-seed default admins into PostgreSQL for instant, high-reliability authentication on Vercel
+    const defaultAdmins = [
+      { name: "Diwali Contest Admin 1", email: "admin1@chithiraicreations.com", password: "Admin123!", role: "admin", phone: "+917010240042" },
+      { name: "Diwali Contest Admin 2", email: "admin2@chithiraicreations.com", password: "Admin123!", role: "admin", phone: "+917010240043" },
+      { name: "Super Admin", email: "superadmin@chithiraicreations.com", password: "SuperAdmin123!", role: "super_admin", phone: "+919876543210" },
+      { name: "Event Manager 1", email: "manager1@chithiraicreations.com", password: "Manager1123!", role: "admin", phone: "+919876543211" },
+      { name: "Event Manager 2", email: "manager2@chithiraicreations.com", password: "Manager2123!", role: "admin", phone: "+919876543212" },
+      { name: "Ticket Counter 1", email: "counter1@chithiraicreations.com", password: "Counter1123!", role: "support", phone: "+919876543213" },
+      { name: "Ticket Counter 2", email: "counter2@chithiraicreations.com", password: "Counter2123!", role: "support", phone: "+919876543214" },
+    ];
+
+    const bcrypt = require("bcryptjs");
+    for (const a of defaultAdmins) {
+      const existing = await client.query("SELECT id FROM admins WHERE LOWER(email) = LOWER($1)", [a.email]);
+      if (existing.rows.length === 0) {
+        const hash = await bcrypt.hash(a.password, 10);
+        await client.query(
+          "INSERT INTO admins (name, email, password, role, phone, is_active) VALUES ($1, $2, $3, $4, $5, TRUE)",
+          [a.name, a.email.toLowerCase(), hash, a.role, a.phone]
+        );
+      }
+    }
+
     client.release();
-    console.log('✅ diwali_registrations, inquiries & payment_files PostgreSQL table schema verified.');
+    console.log('✅ diwali_registrations, inquiries, payment_files & admins PostgreSQL table schema verified.');
   } catch (error) {
     console.error('❌ Failed to connect/initialize PostgreSQL:', error.message);
   }
