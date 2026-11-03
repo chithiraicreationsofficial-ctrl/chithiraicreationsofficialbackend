@@ -16,10 +16,7 @@ const connectDB = async () => {
         console.log(`MongoDB Connected: ${conn.connection.host}`);
     } catch (error) {
         console.warn('MongoDB connection error (continuing with PostgreSQL):', error.message);
-        // Do not call process.exit(1) in serverless environments to prevent FUNCTION_INVOCATION_FAILED
-        if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME && process.env.NODE_ENV !== 'production') {
-            process.exit(1);
-        }
+        // Do not crash the server in local or serverless environments when PostgreSQL is available
     }
 };
 
