@@ -267,7 +267,7 @@ router.post("/register", upload.single("paymentScreenshot"), async (req, res) =>
 // ========================================================
 router.get("/registrations", async (req, res) => {
   try {
-    const { status, category, search, date, startDate, endDate } = req.query;
+    const { status, category, search, date, startDate, endDate, process, submissionStatus } = req.query;
 
     let query = "SELECT * FROM diwali_registrations";
     const conditions = [];
@@ -281,6 +281,13 @@ router.get("/registrations", async (req, res) => {
     if (category && category !== "ALL") {
       values.push(category);
       conditions.push(`category = $${values.length}`);
+    }
+
+    const effectiveProcess = process || submissionStatus;
+    if (effectiveProcess === "COMPLETED") {
+      conditions.push(`submission_url IS NOT NULL AND TRIM(submission_url) != ''`);
+    } else if (effectiveProcess === "PENDING_VIDEO" || effectiveProcess === "PENDING") {
+      conditions.push(`(submission_url IS NULL OR TRIM(submission_url) = '')`);
     }
 
     if (search && search.trim()) {
@@ -343,6 +350,7 @@ router.get("/stats", async (req, res) => {
     const totalRes = await pool.query("SELECT COUNT(*) FROM diwali_registrations");
     const verifiedRes = await pool.query("SELECT COUNT(*) FROM diwali_registrations WHERE status = 'VERIFIED'");
     const pendingRes = await pool.query("SELECT COUNT(*) FROM diwali_registrations WHERE status = 'PENDING'");
+    const completedRes = await pool.query("SELECT COUNT(*) FROM diwali_registrations WHERE submission_url IS NOT NULL AND TRIM(submission_url) != ''");
     const reelRes = await pool.query("SELECT COUNT(*) FROM diwali_registrations WHERE category = 'Reel Category'");
     const photoRes = await pool.query("SELECT COUNT(*) FROM diwali_registrations WHERE category = 'Photo Category'");
 
@@ -383,6 +391,7 @@ router.get("/stats", async (req, res) => {
     const total = parseInt(totalRes.rows[0].count, 10);
     const verified = parseInt(verifiedRes.rows[0].count, 10);
     const pending = parseInt(pendingRes.rows[0].count, 10);
+    const completed = parseInt(completedRes.rows[0].count, 10);
 
     res.json({
       success: true,
@@ -390,6 +399,7 @@ router.get("/stats", async (req, res) => {
         totalRegistrations: total,
         verifiedRegistrations: verified,
         pendingRegistrations: pending,
+        completedRegistrations: completed,
         reelCategoryCount: parseInt(reelRes.rows[0].count, 10),
         photoCategoryCount: parseInt(photoRes.rows[0].count, 10),
         totalFeeCollected: total * 249,
